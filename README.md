@@ -35,7 +35,7 @@ This will install the following dependencies:
 
 ## Usage
 
-1. Create a text file containing the list of countries you want to display using their ISO 3166-1 alpha-3 codes, one per line. For example:
+1. Create a text file containing the list of countries you want to display using their [ISO 3166-1 alpha-3 codes](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3), one per line. For example:
 ```
 # European countries
 FRA  # France
