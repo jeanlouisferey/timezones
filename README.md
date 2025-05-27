@@ -5,6 +5,10 @@ It's particularly useful for teams working across multiple time zones to easily 
 
 ![timetable](./timetable.png)
 
+## Disclaimer
+
+Developed with the assistance of Claude 3.5 Sonnet.
+
 ## Features
 - Automatically detects winter/summer time for the reference country
 - Shows time conversions for working hours (8:00-20:00 French time)
