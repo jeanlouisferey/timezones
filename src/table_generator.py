@@ -89,8 +89,8 @@ class TableGenerator:
     
     def _draw_title(self, draw, reference_tz, width, title_height, timezone_manager):
         """Draw title with reference timezone info."""
-        # Get country name from timezone
-        country_name = timezone_manager.timezone_to_country.get(reference_tz.zone, reference_tz.zone.split('/')[-1])
+        # Get reference country name
+        country_name = timezone_manager.get_reference_country_name()
         offset = datetime.now(reference_tz).strftime('%z')
         offset_str = f"GMT {offset[:3]}:{offset[3:]}"
         
@@ -109,14 +109,14 @@ class TableGenerator:
         
         draw.text((x, y), title, fill='black', font=self.title_font)
     
-    def generate_table(self, timezone_data, output_path, reference_tz, timezone_manager):
+    def generate_table(self, table_data, output_path, reference_tz, timezone_manager):
         """Generate timezone table as PNG image."""
-        if not timezone_data:
+        if not table_data:
             raise ValueError("No timezone data provided")
         
         # Get dimensions
-        rows = len(timezone_data)  # One row per timezone
-        columns = len(timezone_data[0]['periods'])  # Number of time periods
+        rows = len(table_data)  # One row per timezone
+        columns = len(table_data[0]['periods'])  # Number of time periods
         title_height = 50  # Height for title section
         
         # Create image
@@ -150,8 +150,8 @@ class TableGenerator:
                 fill=self.header_text_color
             )
         
-        # Draw timezone names and time periods
-        for row, tz_data in enumerate(timezone_data):
+        # Draw country names and time periods
+        for row, data in enumerate(table_data):
             y = title_height + (row + 1) * self.cell_height
             
             # Fill country name background with black
@@ -161,10 +161,9 @@ class TableGenerator:
             )
             
             # Draw country name in white
-            country_name = timezone_manager.timezone_to_country.get(tz_data['timezone'].zone, tz_data['timezone'].zone.split('/')[-1])
             self._draw_text(
                 draw, 
-                country_name, 
+                data['country'], 
                 0, 
                 y,
                 self.country_column_width,
@@ -173,7 +172,7 @@ class TableGenerator:
             )
             
             # Draw time periods
-            for col, period in enumerate(tz_data['periods']):
+            for col, period in enumerate(data['periods']):
                 x = self.country_column_width + col * self.cell_width
                 
                 # Fill cell with period color

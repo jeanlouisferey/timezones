@@ -1,32 +1,22 @@
-# African countries
 SEN  # Senegal
 GNB  # Guinea-Bissau
 GIN  # Guinea
-SLE  # Sierra Leone
-CIV  # Ivory Coast
-MLI  # Mali
-BFA  # Burkina Faso
 LBR  # Liberia
 MAR  # Morocco
 CMR  # Cameroon
 COD  # DRC
 CAF  # Central African Republic
-
-# European countries
 BEL  # Belgium
 LUX  # Luxembourg
-TUN  # Tunisia
 MDA  # Moldova
 ROU  # Romania
-LTU  # Lithuania
-
-# Middle East and North Africa
 EGY  # Egypt
 BWA  # Botswana
 MDG  # Madagascar
 JOR  # Jordan
 IND  # India
 PAK  # Pakistan
-
-# Other
 UZB  # Uzbekistan
+USA-E  # United States (Eastern)
+RUS-W  # Russia (Western)
+AUS-E  # Australia (Eastern)

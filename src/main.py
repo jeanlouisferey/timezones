@@ -17,13 +17,13 @@ def parse_arguments():
     parser.add_argument(
         "-r", "--reference",
         required=True,
-        help="Reference country or timezone (e.g., 'France' or 'Europe/Paris')"
+        help="Reference country code (e.g., 'FRA' for France)"
     )
     parser.add_argument(
         "-c", "--countries",
         required=True,
         type=Path,
-        help="Path to text file containing list of countries"
+        help="Path to text file containing list of country codes"
     )
     parser.add_argument(
         "--early-late-color",
@@ -63,8 +63,8 @@ def main():
         tz_manager = TimezoneManager(args.reference)
         
         # Load target timezones
-        timezones = tz_manager.load_timezones(args.countries)
-        if not timezones:
+        timezone_data = tz_manager.load_timezones(args.countries)
+        if not timezone_data:
             raise ValueError("No valid timezones found in the input file")
             
         # Prepare colors dictionary
@@ -77,23 +77,24 @@ def main():
         # Initialize table generator
         table_gen = TableGenerator(colors)
         
-        # Prepare timezone data for the table
-        timezone_data = []
-        for tz in timezones:
-            timezone_data.append({
+        # Prepare data for the table
+        table_data = []
+        for country_name, tz in timezone_data:
+            table_data.append({
+                'country': country_name,
                 'timezone': tz,
                 'periods': tz_manager.get_time_periods(tz)
             })
         
-        # Sort timezone data by first time period
-        timezone_data = sorted(timezone_data, key=lambda x: x['periods'][0]['time'].hour * 60 + x['periods'][0]['time'].minute)
+        # Sort data by first time period
+        table_data = sorted(table_data, key=lambda x: x['periods'][0]['time'].hour * 60 + x['periods'][0]['time'].minute)
         
-        # Generate the table with reference timezone
+        # Generate the table
         table_gen.generate_table(
-            timezone_data,
+            table_data,
             args.output,
             tz_manager.reference_tz,
-            tz_manager  # Pass timezone manager instance
+            tz_manager
         )
         print(f"Timetable generated successfully: {args.output}")
         

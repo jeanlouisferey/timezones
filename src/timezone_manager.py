@@ -4,24 +4,33 @@
 from datetime import datetime, timedelta
 import pytz
 import pycountry
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 class TimezoneManager:
     def __init__(self, reference_timezone):
         """Initialize the timezone manager.
         
         Args:
-            reference_timezone (str): Reference timezone (alpha-3 country code or timezone identifier)
+            reference_timezone (str): Reference timezone (country code or timezone identifier)
         """
         self._initialize_country_mappings()
         
         try:
             # Handle both timezone and country code input for reference
-            if len(reference_timezone) == 3:  # Alpha-3 code
-                tz_name = self.get_timezone_for_country(reference_timezone)
-                if not tz_name:
-                    raise ValueError(f"Invalid country code: {reference_timezone}")
-                reference_timezone = tz_name
+            if '-' in reference_timezone:  # Multi-timezone country code
+                if reference_timezone not in self.multi_timezone_countries:
+                    raise ValueError(f"Invalid multi-timezone country code: {reference_timezone}")
+                reference_timezone = self.multi_timezone_countries[reference_timezone][1]
+            else:  # Standard country code or timezone
+                country = pycountry.countries.get(alpha_3=reference_timezone)
+                if country:
+                    # Get timezones for this country's alpha-2 code
+                    matching_zones = pytz.country_timezones.get(country.alpha_2, [])
+                    if matching_zones:
+                        reference_timezone = matching_zones[0]
+                    else:
+                        raise ValueError(f"No timezone found for country: {reference_timezone}")
+            
             self.reference_tz = pytz.timezone(reference_timezone)
         except pytz.exceptions.UnknownTimeZoneError:
             raise ValueError(f"Invalid timezone or country code: {reference_timezone}")
@@ -39,9 +48,41 @@ class TimezoneManager:
         self.timezone_to_country: Dict[str, str] = {}
         self.alpha3_to_name: Dict[str, str] = {}
 
+        # Special handling for multi-timezone countries
+        self.multi_timezone_countries = {
+            'USA-E': ('United States (Eastern)', 'America/New_York'),
+            'USA-C': ('United States (Central)', 'America/Chicago'),
+            'USA-M': ('United States (Mountain)', 'America/Denver'),
+            'USA-P': ('United States (Pacific)', 'America/Los_Angeles'),
+            'RUS-W': ('Russia (Western)', 'Europe/Moscow'),
+            'RUS-C': ('Russia (Central)', 'Asia/Yekaterinburg'),
+            'RUS-E': ('Russia (Eastern)', 'Asia/Vladivostok'),
+            'CAN-E': ('Canada (Eastern)', 'America/Toronto'),
+            'CAN-C': ('Canada (Central)', 'America/Winnipeg'),
+            'CAN-M': ('Canada (Mountain)', 'America/Edmonton'),
+            'CAN-P': ('Canada (Pacific)', 'America/Vancouver'),
+            'BRA-E': ('Brazil (Eastern)', 'America/Sao_Paulo'),
+            'BRA-C': ('Brazil (Central)', 'America/Manaus'),
+            'CHN-E': ('China (Eastern)', 'Asia/Shanghai'),
+            'CHN-W': ('China (Western)', 'Asia/Urumqi'),
+            'AUS-E': ('Australia (Eastern)', 'Australia/Sydney'),
+            'AUS-C': ('Australia (Central)', 'Australia/Adelaide'),
+            'AUS-W': ('Australia (Western)', 'Australia/Perth'),
+        }
+
+        # Add multi-timezone countries
+        for code, (name, tz) in self.multi_timezone_countries.items():
+            self.country_to_timezone[code] = tz
+            self.timezone_to_country[tz] = name
+            self.alpha3_to_name[code] = name
+
         # Process all countries from pycountry
         for country in pycountry.countries:
             self.alpha3_to_name[country.alpha_3] = country.name
+            
+            # Skip multi-timezone countries as they're handled separately
+            if country.alpha_3 in ['USA', 'RUS', 'CAN', 'BRA', 'CHN', 'AUS']:
+                continue
             
             # Find matching timezones for this country
             matching_zones = [tz for tz in pytz.all_timezones if country.alpha_2 in pytz.country_timezones.get(country.alpha_2, [])]
@@ -56,11 +97,15 @@ class TimezoneManager:
         """Get timezone identifier for a country code.
         
         Args:
-            country_code (str): Alpha-3 country code
+            country_code (str): Country code (alpha-3 or special multi-timezone code)
             
         Returns:
             Optional[str]: Timezone identifier or None if not found
         """
+        # Check multi-timezone countries first
+        if country_code in self.multi_timezone_countries:
+            return self.multi_timezone_countries[country_code][1]
+
         try:
             # Try to get the country from the alpha-3 code
             country = pycountry.countries.get(alpha_3=country_code)
@@ -73,16 +118,16 @@ class TimezoneManager:
             pass
         return None
     
-    def load_timezones(self, timezone_file):
+    def load_timezones(self, timezone_file) -> list[Tuple[str, pytz.timezone]]:
         """Load timezones from a file.
         
         Args:
             timezone_file (Path): Path to file containing country codes
             
         Returns:
-            list: List of valid timezone objects
+            list: List of tuples (country_name, timezone_object)
         """
-        timezones = []
+        timezone_data = []
         with open(timezone_file, 'r') as f:
             for line in f:
                 # Skip empty lines and comments
@@ -106,11 +151,12 @@ class TimezoneManager:
                 
                 try:
                     tz = pytz.timezone(tz_name)
-                    timezones.append(tz)
+                    country_name = self.get_country_name(country_code)
+                    timezone_data.append((country_name, tz))
                 except pytz.exceptions.UnknownTimeZoneError:
                     country_name = self.alpha3_to_name.get(country_code, country_code)
                     print(f"Warning: Invalid timezone ignored for country {country_name}: {tz_name}")
-        return timezones
+        return timezone_data
     
     def get_period_type(self, hour, minute=0):
         """Get the type of period for a given hour.
@@ -191,16 +237,38 @@ class TimezoneManager:
         return dt.strftime("%H:00")
 
     def get_country_name(self, country_code: str) -> str:
-        """Get country name from alpha-3 code.
+        """Get country name from country code.
         
         Args:
-            country_code (str): Alpha-3 country code
+            country_code (str): Country code (alpha-3 or special multi-timezone code)
             
         Returns:
             str: Country name or code if not found
         """
+        # Check multi-timezone countries first
+        if country_code in self.multi_timezone_countries:
+            return self.multi_timezone_countries[country_code][0]
+
         try:
             country = pycountry.countries.get(alpha_3=country_code)
             return country.name if country else country_code
         except (KeyError, AttributeError):
             return country_code
+
+    def get_reference_country_name(self) -> str:
+        """Get the name of the reference country.
+        
+        Returns:
+            str: Country name
+        """
+        # Check if it's a multi-timezone country
+        for code, (name, tz) in self.multi_timezone_countries.items():
+            if tz == self.reference_tz.zone:
+                return name
+
+        # Otherwise, try to find the country by timezone
+        for country in pycountry.countries:
+            matching_zones = pytz.country_timezones.get(country.alpha_2, [])
+            if self.reference_tz.zone in matching_zones:
+                return country.name
+        return self.reference_tz.zone.split('/')[-1]
