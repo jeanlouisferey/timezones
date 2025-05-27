@@ -1,4 +1,4 @@
-# timezonesc
+# Timezones
 This program generates a visual timetable showing working hours across the different countries relative to a reference country time.
 
 It's particularly useful for teams working across multiple time zones to easily coordinate meetings and collaboration times.
