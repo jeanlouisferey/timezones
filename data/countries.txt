@@ -4,19 +4,11 @@ GIN  # Guinea
 LBR  # Liberia
 MAR  # Morocco
 CMR  # Cameroon
-COD  # DRC
-CAF  # Central African Republic
 BEL  # Belgium
 LUX  # Luxembourg
 MDA  # Moldova
 ROU  # Romania
-EGY  # Egypt
-BWA  # Botswana
-MDG  # Madagascar
-JOR  # Jordan
 IND  # India
 PAK  # Pakistan
 UZB  # Uzbekistan
 USA-E  # United States (Eastern)
-RUS-W  # Russia (Western)
-AUS-E  # Australia (Eastern)
