@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# Standard library imports
 import argparse
 import sys
-from datetime import datetime
 from pathlib import Path
+
+# Local imports
 
 from timezone_manager import TimezoneManager
 from table_generator import TableGenerator

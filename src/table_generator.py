@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from PIL import Image, ImageDraw, ImageFont
-import pandas as pd
-from pathlib import Path
+# Standard library imports
 from datetime import datetime
+from pathlib import Path
+from typing import Union, Dict, List
+
+# Third-party imports
+from PIL import Image, ImageDraw, ImageFont  # Pour la génération d'images
 
 class TableGenerator:
     def __init__(self, colors):
@@ -109,8 +112,25 @@ class TableGenerator:
         
         draw.text((x, y), title, fill='black', font=self.title_font)
     
-    def generate_table(self, table_data, output_path, reference_tz, timezone_manager):
-        """Generate timezone table as PNG image."""
+    def generate_table(
+        self,
+        table_data: List[Dict],
+        output_path: Union[str, Path],
+        reference_tz,
+        timezone_manager
+    ) -> None:
+        """Generate timezone table as PNG image.
+        
+        Args:
+            table_data: List of dictionaries containing timezone data
+            output_path: Path or string where to save the generated image
+            reference_tz: Reference timezone object
+            timezone_manager: TimezoneManager instance
+            
+        Raises:
+            ValueError: If no timezone data is provided
+            OSError: If the output path is invalid or not writable
+        """
         if not table_data:
             raise ValueError("No timezone data provided")
         
@@ -195,4 +215,11 @@ class TableGenerator:
                 self._draw_text(draw, time_str, x, y, self.cell_width)
         
         # Save image
-        image.save(output_path, 'PNG')
+        # Convert string path to Path object and ensure parent directory exists
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        try:
+            image.save(output_path, 'PNG')
+        except OSError as e:
+            raise OSError(f"Failed to save image to {output_path}: {e}")
